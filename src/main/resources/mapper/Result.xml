@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.spring.springboot.dao.ResultDao" >
+    <resultMap id="BaseResultMap" type="org.spring.springboot.domain.Result" >
+        <result column="right_rate" property="rightRate" jdbcType="INTEGER" />
+        <result column="right_rate1" property="rightRate1" jdbcType="VARCHAR" />
+        <result column="right_rate2" property="rightRate2" jdbcType="VARCHAR" />
+        <result column="right_rate3" property="rightRate3" jdbcType="VARCHAR" />
+        <result column="date" property="date" jdbcType="VARCHAR" />
+        <result column="home_id" property="homeId" jdbcType="VARCHAR" />
+        <result column="guest_id" property="guestId" jdbcType="VARCHAR" />
+        <result column="zdsl" property="zdsl" jdbcType="VARCHAR" />
+        <result column="kdsl" property="kdsl" jdbcType="TIMESTAMP" />
+        <result column="weekday" property="weekday" jdbcType="VARCHAR" />
+        <result column="type_name" property="typeName" jdbcType="INTEGER" />
+        <result column="all_over1" property="allOver1" jdbcType="INTEGER" />
+        <result column="all_over2" property="allOver2" jdbcType="INTEGER" />
+        <result column="all_over3" property="allOver3" jdbcType="INTEGER" />
+        <result column="all_over4" property="allOver4" jdbcType="INTEGER" />
+        <result column="all_over5" property="allOver5" jdbcType="INTEGER" />
+        <result column="goal" property="goal" jdbcType="INTEGER" />
+    </resultMap>
+
+
+    <select id="list" resultMap="BaseResultMap" parameterType="Result" >
+        select
+        right_rate as rightRate,right_rate1 as rightRate1,right_rate2 as rightRate2,
+        right_rate3 as rightRate3,date,home_id as homeId,guest_id as guestId
+        zdsl,kdsl,weekday,type_name as typeName,all_over1 as allOver1,all_over2 as allOver2,
+        all_over3 as allOver3,all_over4 as allOver4,all_over5 as allOver5,goal
+        from data5a8
+
+    </select>
+
+
+    <select id="userinfo" resultType="org.spring.springboot.domain.Auth">
+        select username,password from userinfo
+    </select>
+
+    <select id="listYc" resultType="org.spring.springboot.domain.Auth">
+        select distinct z.game_id as gameId,
+        date_format(x.date, '%Y-%m-%d %H:%i') as ycDate,x.home_id as homeName,x.guest_id as guestName
+        from data5a8 x
+        join
+        (select max(substring(date,1,10)) date
+        from
+        data5a8
+        where date&lt;=sysdate() and
+        (
+        right_rate>=70.00
+        or (right_rate1>=70.00 and right_rate2 is null and right_rate3 is null)
+        or (right_rate2>=70.00 and right_rate3 is null)
+        or (right_rate3>=70.00)
+        )
+        ) y
+        on substring(x.date,1,10)=y.date
+        join rtest.gmatch z
+        on (lower(trim(replace(replace(substr(x.home_id,instr(x.home_id,'(')+1,instr(x.home_id,') E')),') Esports',''),') Espo','')))
+        =lower(trim(replace(replace(substr(z.home,instr(z.home,'(')+1,instr(z.home,') E')),') Esports',''),') Esport','')))
+        or lower(trim(replace(replace(substr(x.guest_id,instr(x.guest_id,'(')+1,instr(x.guest_id,') E')),') Esports',''),') Esport','')))
+        =lower(trim(replace(replace(substr(z.guest,instr(z.guest,'(')+1,instr(z.guest,') E')),') Esports',''),') Esport',''))))
+        and abs(round((UNIX_TIMESTAMP(x.date)-UNIX_TIMESTAMP(concat(z.start_time,':00')))/60))&lt;=3
+        where x.date>=sysdate()
+        order by x.date asc
+    </select>
+
+    <insert id="saveMatch" parameterType="org.spring.springboot.domain.Auth">
+      insert into gmatch(game_id,start_time,home,guest) VALUES (#{gameId},#{ycDate},#{homeName},#{guestName})
+    </insert>
+
+    <select id="listMatchByGameId" parameterType="org.spring.springboot.domain.Auth" resultType="org.spring.springboot.domain.Auth">
+        select game_id as gameId,start_time as ycDate,home as homeName,guest as guestName
+        from gmatch where game_id = #{gameId}
+    </select>
+</mapper>
